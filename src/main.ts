@@ -40,7 +40,7 @@ export default class PencilPlugin extends Plugin {
 		});
 	}
 
-	async onunload(): Promise<void> {
+	onunload(): void {
 		// Obsidian detaches views automatically; nothing else to release.
 	}
 

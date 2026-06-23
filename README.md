@@ -34,6 +34,35 @@ Scroll to pan; `⌘/Ctrl` + scroll (or pinch on touch) to zoom. Use **Fit** to f
 
 Click the pencil icon in the ribbon, or run the **Create new whiteboard** command. A `Whiteboard.pencil` file is created in your active folder and opened immediately (subsequent ones are numbered `Whiteboard 1`, `Whiteboard 2`, …).
 
+## Installation
+
+### From the community plugin browser
+
+1. Open **Settings → Community plugins** in Obsidian.
+2. Click **Browse** and search for **Pencil**.
+3. Click **Install**, then **Enable**.
+
+### Manual install
+
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/rcanand/obsidian-pencil/releases).
+2. In your vault, create a folder `.obsidian/plugins/obsidian-pencil/`.
+3. Copy the three files into that folder.
+4. Open **Settings → Community plugins** in Obsidian, reload the plugin list, and enable **Pencil**.
+
+> Pencil works on desktop, iPad, and mobile. No internet connection or sync service is required — every whiteboard is just a `.pencil` file in your vault.
+
+## Usage
+
+1. **Create a whiteboard** — click the pencil icon in the left ribbon, or run the **Create new whiteboard** command from the command palette. A `Whiteboard.pencil` file is created in your active folder and opened immediately.
+2. **Draw** — pick the **Pencil** tool (`P`), choose a color and size from the toolbar, and draw with a stylus, mouse, or finger. Pen input gets pressure-thickness variation (toggle it from the toolbar).
+3. **Pan & zoom** — scroll to pan, `⌘/Ctrl` + scroll (or two-finger pinch) to zoom. Use **Fit** to frame everything, **Reset view** to return to 100%.
+4. **Erase** — select the **Eraser** (`E`) and drag over strokes to delete them.
+5. **Select & move** — pick **Select** (`V`), drag a box around strokes, then drag the selection to a new spot. Press `Delete`/`Backspace` to remove it.
+6. **Colors** — use the built-in palette, or click **+** to add a custom color via the native picker. Long-press (or right-click) a custom swatch to remove it.
+7. **Undo / redo** — `⌘/Ctrl+Z` to undo, `⌘/Ctrl+Shift+Z` (or `⌘/Ctrl+Y`) to redo.
+
+Everything you draw is saved automatically to the `.pencil` file, including your current view position.
+
 ## Notes
 
 - Pressure sensitivity is on by default for pen input. Turn it off from the toolbar if you want uniform strokes.

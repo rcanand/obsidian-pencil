@@ -8,6 +8,7 @@ import {
 	serializeData,
 } from "./types";
 import { ICON } from "./icons";
+import { ConfirmModal } from "./confirm";
 import type PencilPlugin from "./main";
 
 export const VIEW_TYPE_PENCIL = "pencil-whiteboard";
@@ -162,6 +163,8 @@ export class PencilWhiteboardView extends TextFileView {
 
 	private readonly plugin: PencilPlugin;
 	private colorPickerInput: HTMLInputElement | null = null;
+	/** Active-state check functions for toolbar buttons/swatches, keyed by element. */
+	private activeChecks: WeakMap<HTMLElement, () => boolean> = new WeakMap();
 
 	constructor(leaf: WorkspaceLeaf, plugin: PencilPlugin) {
 		super(leaf);
@@ -271,8 +274,7 @@ export class PencilWhiteboardView extends TextFileView {
 				onClick();
 				this.refreshToolbarState();
 			});
-			if (isActive) btn.dataset.activeCheck = "1";
-			(btn as any).__isActive = isActive;
+			if (isActive) this.activeChecks.set(btn, isActive);
 			return btn;
 		};
 
@@ -302,7 +304,7 @@ export class PencilWhiteboardView extends TextFileView {
 				this.refreshToolbarState();
 			});
 			if (isCustom) this.attachLongPressRemove(sw, c);
-			(sw as any).__isActive = () => this.color === c;
+			this.activeChecks.set(sw, () => this.color === c);
 		}
 
 		const addBtn = tb.createDiv({
@@ -328,7 +330,7 @@ export class PencilWhiteboardView extends TextFileView {
 				this.size = s;
 				this.refreshToolbarState();
 			});
-			(sw as any).__isActive = () => this.size === s;
+			this.activeChecks.set(sw, () => this.size === s);
 		}
 
 		this.pressureBtn = makeBtn(
@@ -368,7 +370,7 @@ export class PencilWhiteboardView extends TextFileView {
 			input.value = "#5b9dff";
 			input.addEventListener("change", () => {
 				const value = input.value;
-				if (value) this.addCustomColor(value);
+				if (value) void this.addCustomColor(value);
 			});
 			this.colorPickerInput = input;
 		}
@@ -414,9 +416,12 @@ export class PencilWhiteboardView extends TextFileView {
 			timer = window.setTimeout(() => {
 				fired = true;
 				timer = null;
-				if (confirm(`Remove color ${hex} from the palette?`)) {
-					void this.removeCustomColor(hex);
-				}
+				new ConfirmModal(
+					this.app,
+					`Remove color ${hex} from the palette?`,
+					() => void this.removeCustomColor(hex),
+					"Remove",
+				).open();
 			}, 600);
 		});
 		el.addEventListener("pointerup", clear);
@@ -425,9 +430,12 @@ export class PencilWhiteboardView extends TextFileView {
 		// Right-click on desktop is a quick alternative to long-press.
 		el.addEventListener("contextmenu", (e) => {
 			e.preventDefault();
-			if (confirm(`Remove color ${hex} from the palette?`)) {
-				void this.removeCustomColor(hex);
-			}
+			new ConfirmModal(
+				this.app,
+				`Remove color ${hex} from the palette?`,
+				() => void this.removeCustomColor(hex),
+				"Remove",
+			).open();
 		});
 		// Swallow the click that follows a successful long-press so the color
 		// isn't also selected.
@@ -453,7 +461,7 @@ export class PencilWhiteboardView extends TextFileView {
 	private refreshToolbarState(): void {
 		const els = this.toolbar.querySelectorAll<HTMLElement>("button, .pencil-swatch, .pencil-size");
 		els.forEach((el) => {
-			const check = (el as any).__isActive as (() => boolean) | undefined;
+			const check = this.activeChecks.get(el);
 			if (check) el.toggleClass("is-active", check());
 		});
 		if (this.pressureBtn) {
@@ -481,7 +489,7 @@ export class PencilWhiteboardView extends TextFileView {
 	private scheduleRender(): void {
 		if (this.renderRequested) return;
 		this.renderRequested = true;
-		requestAnimationFrame(() => {
+		window.requestAnimationFrame(() => {
 			this.renderRequested = false;
 			this.render();
 		});
@@ -591,7 +599,6 @@ export class PencilWhiteboardView extends TextFileView {
 
 	private attachPointerHandlers(): void {
 		const el = this.container;
-		el.style.touchAction = "none";
 
 		el.addEventListener("pointerdown", (e) => this.onPointerDown(e));
 		el.addEventListener("pointermove", (e) => this.onPointerMove(e));
@@ -1022,12 +1029,13 @@ export class PencilWhiteboardView extends TextFileView {
 
 	private clearAllPrompt(): void {
 		if (this.boardData.strokes.length === 0) return;
-		if (!confirm("Clear the entire whiteboard?")) return;
-		this.pushUndoSnapshot();
-		this.boardData.strokes = [];
-		this.selectedIds.clear();
-		this.scheduleRender();
-		this.scheduleSave();
+		new ConfirmModal(this.app, "Clear the entire whiteboard?", () => {
+			this.pushUndoSnapshot();
+			this.boardData.strokes = [];
+			this.selectedIds.clear();
+			this.scheduleRender();
+			this.scheduleSave();
+		}, "Clear").open();
 	}
 
 	private handleKey(e: KeyboardEvent): void {
@@ -1078,7 +1086,7 @@ export class PencilWhiteboardView extends TextFileView {
 	}
 
 	private cloneData(): WhiteboardData {
-		return JSON.parse(JSON.stringify(this.boardData));
+		return JSON.parse(JSON.stringify(this.boardData)) as WhiteboardData;
 	}
 
 	private undo(): void {

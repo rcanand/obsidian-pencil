@@ -35,7 +35,7 @@ export function parseData(text: string): WhiteboardData {
 		if (!Array.isArray(data.strokes)) data.strokes = [];
 		data.version = 1;
 		return data;
-	} catch (_e) {
+	} catch {
 		return { ...EMPTY_DATA };
 	}
 }
