@@ -1,15 +1,21 @@
 import { Notice, Plugin, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
 import { PencilWhiteboardView, VIEW_TYPE_PENCIL } from "./view";
 import { EMPTY_DATA, serializeData } from "./types";
+import { ICON, registerIcons } from "./icons";
+import { PencilSettingTab } from "./settings";
 
 const FILE_EXT = "pencil";
 
 export default class PencilPlugin extends Plugin {
 	async onload(): Promise<void> {
+		registerIcons();
+
 		this.registerView(VIEW_TYPE_PENCIL, (leaf: WorkspaceLeaf) => new PencilWhiteboardView(leaf));
 		this.registerExtensions([FILE_EXT], VIEW_TYPE_PENCIL);
 
-		this.addRibbonIcon("pencil", "New whiteboard", async () => {
+		this.addSettingTab(new PencilSettingTab(this.app, this));
+
+		this.addRibbonIcon(ICON.pencil, "New whiteboard", async () => {
 			await this.createAndOpenWhiteboard();
 		});
 

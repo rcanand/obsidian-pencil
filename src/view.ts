@@ -7,6 +7,7 @@ import {
 	parseData,
 	serializeData,
 } from "./types";
+import { ICON } from "./icons";
 
 export const VIEW_TYPE_PENCIL = "pencil-whiteboard";
 
@@ -170,7 +171,7 @@ export class PencilWhiteboardView extends TextFileView {
 	}
 
 	getIcon(): string {
-		return "pencil";
+		return ICON.pencil;
 	}
 
 	getViewData(): string {
@@ -251,10 +252,10 @@ export class PencilWhiteboardView extends TextFileView {
 			return btn;
 		};
 
-		makeBtn("Pencil", "pencil", () => (this.tool = "pencil"), () => this.tool === "pencil");
-		makeBtn("Eraser", "eraser", () => (this.tool = "eraser"), () => this.tool === "eraser");
-		makeBtn("Select", "lasso-select", () => (this.tool = "select"), () => this.tool === "select");
-		makeBtn("Pan", "hand", () => (this.tool = "pan"), () => this.tool === "pan");
+		makeBtn("Pencil", ICON.pencil, () => (this.tool = "pencil"), () => this.tool === "pencil");
+		makeBtn("Eraser", ICON.eraser, () => (this.tool = "eraser"), () => this.tool === "eraser");
+		makeBtn("Select", ICON.select, () => (this.tool = "select"), () => this.tool === "select");
+		makeBtn("Pan", ICON.hand, () => (this.tool = "pan"), () => this.tool === "pan");
 
 		tb.createDiv({ cls: "pencil-sep" });
 
@@ -287,20 +288,20 @@ export class PencilWhiteboardView extends TextFileView {
 
 		tb.createDiv({ cls: "pencil-sep" });
 
-		makeBtn("Undo", "undo-2", () => this.undo());
-		makeBtn("Redo", "redo-2", () => this.redo());
+		makeBtn("Undo", ICON.undo, () => this.undo());
+		makeBtn("Redo", ICON.redo, () => this.redo());
 
 		tb.createDiv({ cls: "pencil-sep" });
 
-		makeBtn("Zoom in", "zoom-in", () => this.zoomAtCenter(1.2));
-		makeBtn("Zoom out", "zoom-out", () => this.zoomAtCenter(1 / 1.2));
-		makeBtn("Fit", "maximize-2", () => this.zoomToFit());
-		makeBtn("Reset view", "locate-fixed", () => this.resetView());
+		makeBtn("Zoom in", ICON.zoomIn, () => this.zoomAtCenter(1.2));
+		makeBtn("Zoom out", ICON.zoomOut, () => this.zoomAtCenter(1 / 1.2));
+		makeBtn("Fit", ICON.fit, () => this.zoomToFit());
+		makeBtn("Reset view", ICON.reset, () => this.resetView());
 
 		tb.createDiv({ cls: "pencil-sep" });
 
-		makeBtn("Delete selection", "trash-2", () => this.deleteSelection());
-		makeBtn("Clear all", "x-circle", () => this.clearAllPrompt());
+		makeBtn("Delete selection", ICON.trash, () => this.deleteSelection());
+		makeBtn("Clear all", ICON.clear, () => this.clearAllPrompt());
 
 		this.refreshToolbarState();
 	}
