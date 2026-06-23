@@ -125,6 +125,10 @@ export class PencilWhiteboardView extends TextFileView {
 	/** Once a pen has been used in this view, finger touches default to pan
 	 * (Apple Pencil convention). Until then, single-finger touches draw. */
 	private penSeen: boolean = false;
+	/** Set once a pressure-capable pen pointer is observed. The pressure
+	 * toggle stays disabled until then (mouse-only devices never set it). */
+	private pressureAvailable: boolean = false;
+	private pressureBtn: HTMLButtonElement | null = null;
 
 	private pinch: null | {
 		ids: [number, number];
@@ -330,6 +334,14 @@ export class PencilWhiteboardView extends TextFileView {
 			(sw as any).__isActive = () => this.size === s;
 		}
 
+		this.pressureBtn = makeBtn(
+			"Pressure (pen thickness)",
+			"Pressure",
+			ICON.pressure,
+			() => this.togglePressure(),
+			() => this.pressureAvailable && this.plugin.settings.pressureEnabled,
+		);
+
 		tb.createDiv({ cls: "pencil-sep" });
 
 		makeBtn("Undo", "Undo", ICON.undo, () => this.undo());
@@ -435,12 +447,31 @@ export class PencilWhiteboardView extends TextFileView {
 		);
 	}
 
+	private togglePressure(): void {
+		if (!this.pressureAvailable) return;
+		this.plugin.settings.pressureEnabled = !this.plugin.settings.pressureEnabled;
+		void this.plugin.saveSettings();
+		this.refreshToolbarState();
+	}
+
 	private refreshToolbarState(): void {
 		const els = this.toolbar.querySelectorAll<HTMLElement>("button, .pencil-swatch, .pencil-size");
 		els.forEach((el) => {
 			const check = (el as any).__isActive as (() => boolean) | undefined;
 			if (check) el.toggleClass("is-active", check());
 		});
+		if (this.pressureBtn) {
+			this.pressureBtn.disabled = !this.pressureAvailable;
+			this.pressureBtn.toggleClass("is-disabled", !this.pressureAvailable);
+			this.pressureBtn.setAttr(
+				"title",
+				this.pressureAvailable
+					? this.plugin.settings.pressureEnabled
+						? "Pressure thickness: on (tap to turn off)"
+						: "Pressure thickness: off (tap to turn on)"
+					: "Pressure thickness: unavailable (no pen detected)",
+			);
+		}
 	}
 
 	private resize(): void {
@@ -595,6 +626,12 @@ export class PencilWhiteboardView extends TextFileView {
 		if (isPen) {
 			this.penActive = true;
 			this.penSeen = true;
+			// A pen reports real pressure, so the pressure toggle is meaningful.
+			// Enable it the first time we see one.
+			if (!this.pressureAvailable) {
+				this.pressureAvailable = true;
+				this.refreshToolbarState();
+			}
 			// Pen takes over: abandon any finger pan/pinch/stroke in progress.
 			this.panStart = null;
 			this.pinch = null;
@@ -893,7 +930,9 @@ export class PencilWhiteboardView extends TextFileView {
 	}
 
 	private pressureFor(e: PointerEvent): number {
-		if (e.pointerType === "pen") {
+		// 0.5 yields constant (nominal) thickness. Only vary by pressure for a
+		// pen when the user has the pressure effect enabled.
+		if (e.pointerType === "pen" && this.plugin.settings.pressureEnabled) {
 			// Some browsers report 0 pressure for hover events; clamp away from 0.
 			return Math.max(0.05, Math.min(1, e.pressure || 0.5));
 		}

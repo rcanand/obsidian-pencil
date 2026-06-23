@@ -74,6 +74,12 @@ const LUCIDE_24: Record<string, string> = {
 		<path d="m15 9-6 6" />
 		<path d="m9 9 6 6" />
 	`,
+	// Two strokes of differing weight: a glyph for pressure thickness variation.
+	"pencil-pressure": `
+		<line x1="4" y1="8" x2="20" y2="8" stroke-width="1" />
+		<line x1="4" y1="13" x2="20" y2="13" stroke-width="2.5" />
+		<line x1="4" y1="18" x2="20" y2="18" stroke-width="4.5" />
+	`,
 };
 
 let registered = false;
@@ -107,4 +113,5 @@ export const ICON = {
 	reset: "pencil-reset",
 	trash: "pencil-trash",
 	clear: "pencil-clear",
+	pressure: "pencil-pressure",
 } as const;

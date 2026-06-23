@@ -44,6 +44,17 @@
 	color: #ffffff;
 }
 
+.pencil-toolbar .pencil-btn:disabled,
+.pencil-toolbar .pencil-btn.is-disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+.pencil-toolbar .pencil-btn:disabled:hover,
+.pencil-toolbar .pencil-btn.is-disabled:hover {
+	background-color: transparent;
+}
+
 /* Mobile: buttons show short text labels instead of icons. */
 .pencil-toolbar .pencil-btn-text {
 	width: auto;

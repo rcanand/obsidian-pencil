@@ -9,10 +9,13 @@ const FILE_EXT = "pencil";
 export interface PencilSettings {
 	/** Hex colors the user has added to the palette via the picker. */
 	customColors: string[];
+	/** Whether pen pressure varies stroke thickness (when a pen is in use). */
+	pressureEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: PencilSettings = {
 	customColors: [],
+	pressureEnabled: true,
 };
 
 export default class PencilPlugin extends Plugin {
