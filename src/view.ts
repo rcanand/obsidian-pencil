@@ -128,6 +128,13 @@ export class PencilWhiteboardView extends TextFileView {
 	private penSeen: boolean = false;
 	private pressureBtn: HTMLButtonElement | null = null;
 
+	// Double-tap-to-eraser state
+	private lastPenTapTime: number = 0;
+	private lastPenTapX: number = 0;
+	private lastPenTapY: number = 0;
+	private lastPenTapStroke: Stroke | null = null;
+	private preTapTool: Tool = "pencil";
+
 	private pinch: null | {
 		ids: [number, number];
 		startDist: number;
@@ -613,7 +620,7 @@ export class PencilWhiteboardView extends TextFileView {
 	private attachPointerHandlers(): void {
 		const el = this.container;
 
-		el.addEventListener("pointerdown", (e) => this.onPointerDown(e));
+el.addEventListener("pointerdown", (e) => this.onPointerDown(e));
 		el.addEventListener("pointermove", (e) => this.onPointerMove(e));
 		el.addEventListener("pointerup", (e) => this.onPointerUp(e));
 		el.addEventListener("pointercancel", (e) => this.onPointerUp(e));
@@ -642,6 +649,39 @@ export class PencilWhiteboardView extends TextFileView {
 			this.panStart = null;
 			this.pinch = null;
 			this.cancelInProgressStroke();
+
+			if (this.plugin.settings.doubleTapToEraser) {
+				const now = performance.now();
+				const dx = e.clientX - this.lastPenTapX;
+				const dy = e.clientY - this.lastPenTapY;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+				const elapsed = now - this.lastPenTapTime;
+
+				if (elapsed < this.plugin.settings.doubleTapWindowMs && dist < 30) {
+					// Double tap — remove the dot from the first tap.
+					if (this.lastPenTapStroke) {
+						this.boardData.strokes = this.boardData.strokes.filter((s) => s !== this.lastPenTapStroke);
+						if (this.undoStack.length > 0) this.undoStack.pop();
+						this.lastPenTapStroke = null;
+						this.scheduleRender();
+					}
+					// Toggle pencil ↔ eraser and skip drawing.
+					if (this.tool === "eraser") {
+						this.tool = this.preTapTool === "eraser" ? "pencil" : this.preTapTool;
+					} else {
+						this.preTapTool = this.tool;
+						this.tool = "eraser";
+					}
+					this.refreshToolbarState();
+					this.lastPenTapTime = 0;
+					return;
+				}
+
+				this.lastPenTapStroke = null;
+				this.lastPenTapTime = now;
+				this.lastPenTapX = e.clientX;
+				this.lastPenTapY = e.clientY;
+			}
 		}
 
 		this.pointers.set(e.pointerId, {
@@ -745,6 +785,9 @@ export class PencilWhiteboardView extends TextFileView {
 
 		if (p.stroke) {
 			this.finishStroke(p.stroke);
+			if (e.pointerType === "pen" && this.lastPenTapTime > 0) {
+				this.lastPenTapStroke = p.stroke;
+			}
 		}
 
 		this.pointers.delete(e.pointerId);

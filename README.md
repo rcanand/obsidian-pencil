@@ -28,6 +28,16 @@ Pencil is an opinionated, single-slice take on handwriting in Obsidian. The exis
 
 Other shortcuts: `⌘/Ctrl+Z` undo, `⌘/Ctrl+Shift+Z` redo, `Delete`/`Backspace` removes the current selection.
 
+**Apple Pencil double-tap** — quickly tap the pen tip twice on the canvas to toggle between Pencil and Eraser. The speed threshold is configurable in plugin settings (Fast / Normal / Slow). Note: this uses tip double-tap as a fallback since the hardware side-tap gesture is not yet exposed to plugins by Obsidian.
+
+## Settings
+
+Open **Settings → Community plugins → Pencil** (gear icon) to configure:
+
+- **Pen pressure** — toggle pressure-thickness variation for Apple Pencil and other styluses.
+- **Double-tap to toggle eraser** — enable or disable tip double-tap tool switching.
+- **Double-tap speed** — how quickly you need to tap twice (Fast 125ms / Normal 300ms / Slow 600ms).
+
 Scroll to pan; `⌘/Ctrl` + scroll (or pinch on touch) to zoom. Use **Fit** to frame everything you've drawn.
 
 ## Creating a whiteboard
