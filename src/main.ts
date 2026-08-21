@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
+import { Notice, Plugin, PluginSettingTab, App, Setting, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
 import { PencilWhiteboardView, VIEW_TYPE_PENCIL } from "./view";
 import { EMPTY_DATA, serializeData } from "./types";
 import { ICON, registerIcons } from "./icons";
@@ -10,11 +10,17 @@ export interface PencilSettings {
 	customColors: string[];
 	/** Whether pen pressure varies stroke thickness (when a pen is in use). */
 	pressureEnabled: boolean;
+	/** Whether a quick pen double-tap on the canvas toggles pencil↔eraser. */
+	doubleTapToEraser: boolean;
+	/** Max ms between two pen taps to count as a double-tap. */
+	doubleTapWindowMs: number;
 }
 
 const DEFAULT_SETTINGS: PencilSettings = {
 	customColors: [],
 	pressureEnabled: true,
+	doubleTapToEraser: true,
+	doubleTapWindowMs: 300,
 };
 
 export default class PencilPlugin extends Plugin {
@@ -38,6 +44,8 @@ export default class PencilPlugin extends Plugin {
 				await this.createAndOpenWhiteboard();
 			},
 		});
+
+		this.addSettingTab(new PencilSettingTab(this.app, this));
 	}
 
 	onunload(): void {
@@ -83,5 +91,58 @@ export default class PencilPlugin extends Plugin {
 			i += 1;
 		}
 		return candidate;
+	}
+}
+
+class PencilSettingTab extends PluginSettingTab {
+	plugin: PencilPlugin;
+
+	constructor(app: App, plugin: PencilPlugin) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const { containerEl } = this;
+		containerEl.empty();
+
+		new Setting(containerEl)
+			.setName("Pen pressure")
+			.setDesc("Vary stroke thickness based on Apple Pencil pressure.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.pressureEnabled)
+					.onChange(async (value) => {
+						this.plugin.settings.pressureEnabled = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Double-tap to toggle eraser")
+			.setDesc("Quickly tap the canvas twice with the pen tip to switch between pencil and eraser.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.doubleTapToEraser)
+					.onChange(async (value) => {
+						this.plugin.settings.doubleTapToEraser = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Double-tap speed")
+			.setDesc("How quickly you need to tap twice. Slower is more forgiving.")
+			.addDropdown((drop) =>
+				drop
+					.addOption("125", "Fast (125ms)")
+					.addOption("300", "Normal (300ms)")
+					.addOption("600", "Slow (600ms)")
+					.setValue(String(this.plugin.settings.doubleTapWindowMs))
+					.onChange(async (value) => {
+						this.plugin.settings.doubleTapWindowMs = Number(value);
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 }
