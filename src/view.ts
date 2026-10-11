@@ -117,9 +117,12 @@ export class PencilWhiteboardView extends TextFileView {
 	private view: ViewTransform = { x: 0, y: 0, scale: 1 };
 
 	private tool: Tool = "pencil";
+	private previousTool: Tool = "pencil";
 	private color: string = BUILTIN_COLORS[0];
 	private size: number = SIZES[1];
 	private eraseRadius: number = 8;
+
+	private longPressStartTime: undefined | number = undefined;
 
 	private pointers: Map<number, ActivePointer> = new Map();
 	private penActive: boolean = false;
@@ -160,6 +163,7 @@ export class PencilWhiteboardView extends TextFileView {
 	private dpr: number = 1;
 
 	private onWindowKeyDown: (e: KeyboardEvent) => void = () => {};
+	private onWindowKeyUp: (e: KeyboardEvent) => void = () => {};
 
 	private readonly plugin: PencilPlugin;
 	/** Active-state check functions for toolbar buttons/swatches, keyed by element. */
@@ -225,8 +229,10 @@ export class PencilWhiteboardView extends TextFileView {
 		this.buildToolbar();
 		this.attachPointerHandlers();
 
-		this.onWindowKeyDown = (e: KeyboardEvent) => this.handleKey(e);
+		this.onWindowKeyDown = (e: KeyboardEvent) => this.handleKeyDown(e);
+		this.onWindowKeyUp = (e: KeyboardEvent) => this.handleKeyUp(e);
 		window.addEventListener("keydown", this.onWindowKeyDown);
+		window.addEventListener("keyup", this.onWindowKeyUp);
 
 		this.resizeObserver = new ResizeObserver(() => this.resize());
 		this.resizeObserver.observe(this.container);
@@ -235,6 +241,7 @@ export class PencilWhiteboardView extends TextFileView {
 
 	async onClose(): Promise<void> {
 		window.removeEventListener("keydown", this.onWindowKeyDown);
+		window.removeEventListener("keyup", this.onWindowKeyUp);
 		if (this.resizeObserver) {
 			this.resizeObserver.disconnect();
 			this.resizeObserver = null;
@@ -1050,11 +1057,18 @@ export class PencilWhiteboardView extends TextFileView {
 			this.scheduleSave();
 		}, "Clear").open();
 	}
-
-	private handleKey(e: KeyboardEvent): void {
+	
+	private handleKeyDown(e: KeyboardEvent): void {
 		if (!this.isActiveLeaf()) return;
 		if (this.isEditableTarget(e.target)) return;
 		const mod = e.metaKey || e.ctrlKey;
+
+		// only quick toggle for pencil and eraser
+		const changeModeKeyPressed = !mod && ["p", "e"].contains(e.key.toLowerCase());
+		if (changeModeKeyPressed && this.plugin.settings.longPressToggle) {
+			this.startLongPressCheck(this.tool);
+		}
+		
 		if (mod && !e.shiftKey && e.key.toLowerCase() === "z") {
 			e.preventDefault();
 			this.undo();
@@ -1077,6 +1091,33 @@ export class PencilWhiteboardView extends TextFileView {
 			this.tool = "pan";
 			this.refreshToolbarState();
 		}
+	}
+
+	private handleKeyUp(_e: KeyboardEvent): void {
+		if (this.plugin.settings.longPressToggle) {
+			this.stopLongPressCheck();
+		}
+	}
+
+	private startLongPressCheck(previousTool: Tool) {
+		// ensure prevention of overwritting start time
+		if (this.longPressStartTime) {
+			return;
+		}
+		this.previousTool = previousTool;
+		this.longPressStartTime = Date.now();
+	}
+
+	private stopLongPressCheck() {
+		if (!this.longPressStartTime) {
+			return;
+		}
+		const timeDiff = Date.now() - this.longPressStartTime;
+		if (timeDiff >= this.plugin.settings.longPressToggleTime) {
+			this.tool = this.previousTool;
+			this.refreshToolbarState();
+		}
+		this.longPressStartTime = undefined;
 	}
 
 	private isActiveLeaf(): boolean {

@@ -28,6 +28,13 @@ Pencil is an opinionated, single-slice take on handwriting in Obsidian. The exis
 
 Other shortcuts: `⌘/Ctrl+Z` undo, `⌘/Ctrl+Shift+Z` redo, `Delete`/`Backspace` removes the current selection.
 
+## Settings
+
+Open **Settings → Community plugins → Pencil** (gear icon) to configure:
+
+- **Quick tool revert** — Allow one to revert back to previous tool on hotkey release
+- **Quick revert hold time** — How long you have to press the tool hotkey before reverting back
+
 Scroll to pan; `⌘/Ctrl` + scroll (or pinch on touch) to zoom. Use **Fit** to frame everything you've drawn.
 
 ## Creating a whiteboard

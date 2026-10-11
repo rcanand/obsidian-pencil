@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
+import { Notice, Plugin, PluginSettingTab, App, Setting, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
 import { PencilWhiteboardView, VIEW_TYPE_PENCIL } from "./view";
 import { EMPTY_DATA, serializeData } from "./types";
 import { ICON, registerIcons } from "./icons";
@@ -10,11 +10,16 @@ export interface PencilSettings {
 	customColors: string[];
 	/** Whether pen pressure varies stroke thickness (when a pen is in use). */
 	pressureEnabled: boolean;
+
+	longPressToggle: boolean;
+	longPressToggleTime: number;
 }
 
 const DEFAULT_SETTINGS: PencilSettings = {
 	customColors: [],
 	pressureEnabled: true,
+	longPressToggle: false,
+	longPressToggleTime: 300,
 };
 
 export default class PencilPlugin extends Plugin {
@@ -38,6 +43,8 @@ export default class PencilPlugin extends Plugin {
 				await this.createAndOpenWhiteboard();
 			},
 		});
+
+		this.addSettingTab(new PencilSettingTab(this.app, this));
 	}
 
 	onunload(): void {
@@ -83,5 +90,46 @@ export default class PencilPlugin extends Plugin {
 			i += 1;
 		}
 		return candidate;
+	}
+}
+
+class PencilSettingTab extends PluginSettingTab {
+	plugin: PencilPlugin;
+
+	constructor(app: App, plugin: PencilPlugin) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const { containerEl } = this;
+		containerEl.empty();
+
+		new Setting(containerEl)
+			.setName("Quick tool revert")
+			.setDesc("Allow one to revert back to previous tool on hotkey release")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.longPressToggle)
+					.onChange(async (value) => {
+						this.plugin.settings.longPressToggle = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Quick revert hold time")
+			.setDesc("How long you have to press the tool hotkey before reverting back")
+			.addDropdown((drop) =>
+				drop
+					.addOption("125", "Fast (125ms)")
+					.addOption("300", "Normal (300ms)")
+					.addOption("600", "Slow (600ms)")
+					.setValue(String(this.plugin.settings.longPressToggleTime))
+					.onChange(async (value) => {
+						this.plugin.settings.longPressToggleTime = Number(value);
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 }
